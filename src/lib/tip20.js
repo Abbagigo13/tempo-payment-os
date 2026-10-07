@@ -3,8 +3,8 @@
 // Minimal TIP-20 ABI + token helpers.
 // TIP-20 spec: https://docs.tempo.xyz
 
-import { publicClient } from "./tempo";
-import { TIP20_ABI } from "./tip20Abi";
+import { publicClient } from "./tempo.js";
+import { TIP20_ABI } from "./tip20Abi.js";
 
 export { TIP20_ABI };
 

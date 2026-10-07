@@ -1,6 +1,6 @@
 // src/lib/tempo.js
 import { createPublicClient, http, defineChain } from "viem";
-import { TIP20_ABI } from "./tip20Abi";
+import { TIP20_ABI } from "./tip20Abi.js";
 
 // Tempo Moderato testnet — see https://docs.tempo.xyz
 export const tempoTestnet = defineChain({

@@ -1,8 +1,8 @@
 // src/lib/wallet.js
 import { createWalletClient, custom } from "viem";
-import { tempoTestnet } from "./tempo";
-import { TIP20_ABI } from "./tip20Abi";
-import { parseTokenAmount, getTokenDecimals } from "./tip20";
+import { tempoTestnet } from "./tempo.js";
+import { TIP20_ABI } from "./tip20Abi.js";
+import { parseTokenAmount, getTokenDecimals } from "./tip20.js";
 
 const CHAIN_HEX = "0x" + tempoTestnet.id.toString(16);
 
