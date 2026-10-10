@@ -10,11 +10,23 @@ export function useTempoStatus() {
   const [balanceError, setBalanceError] = useState(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const mountedRef = useRef(true);
+  // Incremented on every balance read, so a slow older request can't
+  // overwrite the result of a newer one.
+  const balanceRequestRef = useRef(0);
 
   const refresh = useCallback(async () => {
     setStatus("connecting");
     setError(null);
-    const result = await checkTempoConnection();
+
+    let result;
+    try {
+      result = await checkTempoConnection();
+    } catch (err) {
+      result = {
+        ok: false,
+        error: err?.message || "Unable to reach Tempo RPC.",
+      };
+    }
     if (!mountedRef.current) return;
 
     if (result.ok) {
@@ -32,23 +44,36 @@ export function useTempoStatus() {
   }, []);
 
   const checkBalance = useCallback(async (address, tokenKey = "pathUSD") => {
+    const requestId = ++balanceRequestRef.current;
+    const trimmed = String(address ?? "").trim();
+
     setBalanceError(null);
     setBalance(null);
 
-    if (!isValidAddress(address)) {
+    if (!isValidAddress(trimmed)) {
+      setBalanceLoading(false);
       setBalanceError("Enter a valid 0x… address.");
       return;
     }
 
     const tokenAddress = TESTNET_TOKENS[tokenKey];
     if (!tokenAddress) {
+      setBalanceLoading(false);
       setBalanceError("Unknown token.");
       return;
     }
 
     setBalanceLoading(true);
-    const result = await readTokenBalance(tokenAddress, address.trim());
-    if (!mountedRef.current) return;
+
+    let result;
+    try {
+      result = await readTokenBalance(tokenAddress, trimmed);
+    } catch (err) {
+      result = { ok: false, error: err?.message || "Could not read balance." };
+    }
+
+    // Ignore the result if the page was left or a newer read has started.
+    if (!mountedRef.current || requestId !== balanceRequestRef.current) return;
     setBalanceLoading(false);
 
     if (!result.ok) {
@@ -57,7 +82,7 @@ export function useTempoStatus() {
     }
 
     setBalance({
-      address: address.trim(),
+      address: trimmed,
       token: tokenKey,
       symbol: result.symbol,
       formatted: formatTokenAmount(result.raw, result.decimals),
