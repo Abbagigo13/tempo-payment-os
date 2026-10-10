@@ -13,6 +13,7 @@ import { useWorkflows } from "./hooks/useWorkflows";
 import { useTempoStatus } from "./hooks/useTempoStatus";
 import { useWallet } from "./hooks/useWallet";
 import { sendTip20Transfer } from "./lib/wallet";
+import { clearStored } from "./lib/storage";
 
 export default function App() {
   const [activePage, setActivePage] = useState("dashboard");
@@ -31,6 +32,18 @@ export default function App() {
   const { workflows, toggleWorkflow, markRun } = useWorkflows();
   const tempo = useTempoStatus();
   const wallet = useWallet();
+
+  // Clear the saved payments and activity feed, then reload so the app
+  // starts again from the sample data.
+  function handleReset() {
+    const confirmed = window.confirm(
+      "Reset demo data? This clears the saved payment history and activity feed and restores the sample data. Nothing on-chain is affected."
+    );
+    if (!confirmed) return;
+    clearStored("payments:v1");
+    clearStored("activity:v1");
+    window.location.reload();
+  }
 
   // Wallet transfers go through the policy engine before anything is
   // sent to the wallet, and are recorded in the payment history after.
@@ -112,6 +125,7 @@ export default function App() {
             wallet={wallet}
             onSend={handleWalletSend}
             onCheckPolicy={checkPayment}
+            onReset={handleReset}
           />
         );
     }

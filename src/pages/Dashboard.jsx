@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   CircleDollarSign,
   Clock3,
+  RotateCcw,
   Wallet,
 } from "lucide-react";
 import StatCard from "../components/StatCard";
@@ -18,6 +19,7 @@ export default function Dashboard({
   wallet,
   onSend,
   onCheckPolicy,
+  onReset,
 }) {
   const completed = payments.filter((p) => p.status === "Completed");
   const pending = payments.filter((p) => p.status === "Pending");
@@ -30,7 +32,19 @@ export default function Dashboard({
           <h2>Payment overview</h2>
           <p>A snapshot of your payment operations.</p>
         </div>
-        <span className="demo-label">Sample data</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {onReset && (
+            <button
+              className="secondary-button small"
+              onClick={onReset}
+              title="Clear saved payments and activity, and restore the sample data"
+            >
+              <RotateCcw size={13} />
+              Reset demo data
+            </button>
+          )}
+          <span className="demo-label">Sample data</span>
+        </div>
       </div>
 
       <div className="stats-grid">
