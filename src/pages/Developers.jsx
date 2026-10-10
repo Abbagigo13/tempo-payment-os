@@ -123,7 +123,7 @@ export default function Developers({ policies = [], payments = [] }) {
           </div>
           <div className="developer-feature">
             <Check size={15} />
-            Session-scoped activity log
+            Activity log saved in your browser
           </div>
         </div>
 
@@ -208,7 +208,7 @@ export default function Developers({ policies = [], payments = [] }) {
           <span className="roadmap-number">01</span>
           <div>
             <strong>Local simulation</strong>
-            <p>Full payment lifecycle, policy evaluation, and activity log — runs entirely in the browser.</p>
+            <p>Full payment lifecycle, policy evaluation, and activity log. Runs in the browser and saves payments and activity to local storage.</p>
           </div>
           <span className="roadmap-state done">Current</span>
         </div>
@@ -226,22 +226,13 @@ export default function Developers({ policies = [], payments = [] }) {
           <span className="roadmap-number">03</span>
           <div>
             <strong>Tempo testnet — write</strong>
-            <p>Wallet connect, policy-checked TIP-20 transfers signed in your wallet, and on-chain receipt verification.</p>
+            <p>Wallet connect, policy-checked TIP-20 transfers with optional memos, signed in your wallet, with on-chain receipt verification.</p>
           </div>
           <span className="roadmap-state done">Current</span>
         </div>
 
         <div className="roadmap-row">
           <span className="roadmap-number">04</span>
-          <div>
-            <strong>Transfer memos</strong>
-            <p>Attach a memo to TIP-20 transfers using Tempo's native memo support.</p>
-          </div>
-          <span className="roadmap-state">Next</span>
-        </div>
-
-        <div className="roadmap-row">
-          <span className="roadmap-number">05</span>
           <div>
             <strong>Authenticated API</strong>
             <p>Server-side validation, access control, and durable audit events.</p>
@@ -252,7 +243,7 @@ export default function Developers({ policies = [], payments = [] }) {
 
       <p className="muted-text" style={{ marginTop: 14 }}>
         These examples call functions that exist in this repository today.
-        There is no HTTP API. Anything labeled "Next" or "Planned" is not
+        There is no HTTP API. Anything labeled "Planned" is not
         implemented.
       </p>
     </div>

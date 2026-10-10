@@ -34,9 +34,9 @@ See `examples/read-balance.mjs` for a runnable version.
 The write path is:
 
 1. The user connects a wallet via EIP-6963 (`src/hooks/useWallet.js`).
-2. The user picks a token, recipient, and amount in the Wallet panel.
+2. The user picks a token, recipient, and amount in the Wallet panel, and optionally a memo.
 3. The policy engine evaluates the transfer (`handleWalletSend` in `src/App.jsx`). A blocked transfer stops here and is never sent to the wallet. An "approval" result shows a warning in the confirm box.
-4. The app calls `sendTip20Transfer` (`src/lib/wallet.js`), which validates the addresses, checks that the wallet is on Tempo Moderato, reads the token's decimals, and rejects zero amounts.
+4. The app calls `sendTip20Transfer` (`src/lib/wallet.js`), which validates the addresses, checks that the wallet is on Tempo Moderato, reads the token's decimals, rejects zero amounts, and checks the memo length.
 5. The wallet extension signs and submits.
 6. The app waits for the transaction receipt (up to 60 seconds) and checks that it succeeded.
 7. The result is shown with an explorer link and recorded in the payment history.
@@ -52,9 +52,21 @@ The write path is:
 | `{ ok: false, hash, error }` | Submitted, but reverted on-chain | Failed |
 | `{ ok: false, error }` | Never submitted (invalid input, wrong network, wallet rejected) | Not recorded |
 
+## Memos
+
+TIP-20 tokens support a 32-byte memo on transfers through `transferWithMemo(to, amount, memo)`. The Wallet panel has an optional memo field.
+
+- With no memo, the app sends a plain `transfer`.
+- With a memo, the text is converted to 32 bytes, padded on the right, and sent with `transferWithMemo`. The transfer emits a `TransferWithMemo` event with the memo indexed.
+- The limit is 32 **bytes**, not characters. Non-English letters and emoji use more than one byte each. The Wallet panel shows a live byte count and disables sending when the memo is too long.
+- The memo is also saved as the description of the payment in the app's history.
+- Block explorers may show the unused padding bytes as extra symbols after the text. The memo itself is correct. To read it back, strip the null characters.
+
+The conversion lives in `encodeMemo` in `src/lib/wallet.js`.
+
 ## Important notes
 
-**Gas must be explicit.** Tempo uses stablecoins for fees, but wallet extensions cannot price Tempo gas natively. MetaMask overshoots the gas limit by about 580x, which exceeds Tempo's 30M per-transaction cap. The transfer call passes `gas: 300000n` explicitly to bypass the wallet's estimator.
+**Gas must be explicit.** Tempo uses stablecoins for fees, but wallet extensions cannot price Tempo gas natively. MetaMask overshoots the gas limit by about 580x, which exceeds Tempo's 30M per-transaction cap. The transfer calls pass `gas: 300000n` explicitly to bypass the wallet's estimator. This limit has been verified for both plain and memo transfers on the testnet.
 
 ```js
 await walletClient.writeContract({
@@ -75,9 +87,19 @@ await walletClient.writeContract({
 
 Testnet pathUSD is available at <https://tempo.xyz/faucet>. Request funds to your connected wallet address, wait about 10 seconds, then verify in the app's Network panel.
 
+## Saved data
+
+The payment history and the activity feed are saved in the browser's local storage (keys `tempo-payment-os:payments:v1` and `tempo-payment-os:activity:v1`), so they survive a page reload. Saved data is validated when it is loaded; damaged data is ignored and the app starts from the sample data.
+
+Because the history is saved, the daily spending limit also survives a reload. To reset it while testing, run this in the browser console:
+
+```js
+localStorage.removeItem("tempo-payment-os:payments:v1"); location.reload();
+```
+
 ## Known limitations
 
 1. No wallet connect restore across reloads. You reconnect each session.
 2. Wallets may mis-display TIP-20 amounts in their signing dialog. Always verify in the app's confirmation box first.
-3. No memo support yet on transfers (Tempo supports memos natively; this is a planned addition).
-4. The payment history lives in memory. Reloading the page resets it, so the daily limit starts again from the sample data.
+3. Saved data lives only in one browser on one device. Clearing site data removes it.
+4. Policy on/off settings and workflow "last run" results are not saved yet and reset on reload.
