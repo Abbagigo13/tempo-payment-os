@@ -8,8 +8,6 @@
 **Network:** Tempo Moderato testnet (chain ID 42431) — verified TIP-20 transfer on-chain  
 **Budget principle:** Free-first. Local development and simulated workflows come first; any feature that requires paid infrastructure, tokens, or services is optional and must be reviewed before use.
 
----
-
 ## 1. The problem
 
 Stablecoin transfers are becoming easier to execute, but building a reliable payment product is still more complicated than sending tokens from one address to another.
@@ -32,8 +30,6 @@ The result is fragmented payment logic, inconsistent safeguards, harder debuggin
 Blockchains provide transaction execution. Applications still need a practical way to **describe payment intent, enforce policies, coordinate workflows, and inspect outcomes**.
 
 Tempo Payment OS targets that application-layer gap.
-
----
 
 ## 2. The solution
 
@@ -59,8 +55,6 @@ A company can configure a policy that allows routine payments up to a set limit,
 
 In the current prototype, policy evaluation runs locally and payments are simulated. Actual enforcement against on-chain transfers depends on the integration and security model implemented for the selected Tempo features. A frontend rule alone is not a security boundary.
 
----
-
 ## 3. Why Tempo?
 
 Tempo is a payment-focused blockchain designed around stablecoin payment use cases. Its payment-oriented features make it a natural execution layer to explore for this project.
@@ -77,8 +71,6 @@ Tempo's capabilities and interfaces may include features such as:
 Payment OS aims to build useful application-level workflows on top of these capabilities rather than simply reproducing a basic transfer screen.
 
 > **Compatibility note:** Network features, testnet availability, RPC access, SDK APIs, and contract interfaces can change. Before implementing a live integration, verify the current official Tempo documentation and network configuration. Do not assume every capability listed above is available on every network or through the same interface.
-
----
 
 ## 4. Who is it for?
 
@@ -102,8 +94,6 @@ Payment OS aims to build useful application-level workflows on top of these capa
 | Recurring disbursements | Coordinate repeat payments where supported and safely configured |
 
 These are potential use cases. The current prototype demonstrates a subset of them — specifically, single-payment creation, policy evaluation, approval routing, simulated execution, and a live read/write integration with the Tempo Moderato testnet.
-
----
 
 ## 5. Product modules
 
@@ -167,7 +157,7 @@ Per-payment detail drawer showing lifecycle and policy evaluation
 
 Clear, human-readable reasons for every policy decision
 
-5.3 Policy Engine — implemented and tested
+## 5.3 Policy Engine — implemented and tested
 The policy engine evaluates whether a payment request meets configured rules.
 
 Implemented policy types:
@@ -201,7 +191,7 @@ Workflows are backed by a useWorkflows hook. Toggling Active/Paused persists acr
 
 There is no persistent scheduler, no background execution, and no idempotency protection yet — those are prerequisites for any real automation.
 
-5.5 Developer Interface — live examples
+## 5.5 Developer Interface — live examples
 The Developers page presents real code snippets from this repository — policy evaluation, TIP-20 balance reads, and payment creation — plus a live "Try the policy engine" demo where a visitor can type a recipient and amount and see the current decision.
 
 There is no HTTP API; every example calls a function that exists in the codebase. Anything labeled "Next" or "Planned" in the roadmap is not implemented.
@@ -213,7 +203,7 @@ POST /api/approvals
 GET  /api/payments/:id
 GET  /api/activity
 
-5.6 Activity and Audit Trail — implemented (in-memory)
+## 5.6 Activity and Audit Trail — implemented (in-memory)
 The activity feed captures:
 
 Payment creation
@@ -228,7 +218,7 @@ Each payment record also stores decision and decisionReason, and the detail draw
 
 A durable audit trail requires an explicit trust and retention model — not implemented here.
 
-6. Architecture
+## 6. Architecture
                  Applications / Operators
                             |
                             v
@@ -353,7 +343,7 @@ Hosting Optional free tier or local demo Never assume a free tier is permanent
 
 The project remains useful and demonstrable locally without any hosted service or public testnet.
 
-8. Security and trust
+## 8. Security and trust
 Principles
 Never ask users to paste private keys or seed phrases into the dashboard.
 
@@ -381,7 +371,7 @@ Before handling real funds, the system would need authentication, authorization,
 
 Payment OS is an experimental developer project until those requirements are addressed.
 
-9. What makes it different?
+## 9. What makes it different?
 Policy-first payments: rules are evaluated as part of the payment workflow, not bolted on after.
 
 Reusable orchestration: applications can reuse common payment operations instead of rebuilding them.
@@ -393,7 +383,7 @@ Network-aware design: Tempo is the intended settlement layer, while the applicat
 
 Free-first prototyping: the concept can be built and demonstrated locally without requiring paid services.
 
-10. Development roadmap
+## 10. Development roadmap
 Phase 0 — Cost and feasibility checks — ✅ complete
 Review the current official Tempo developer documentation.
 
@@ -539,7 +529,7 @@ Wallets cannot estimate Tempo gas Hardcode a conservative gas value in the trans
 Wallets may mis-display TIP-20 amounts Show the raw amount in the app's confirmation box before signing Implemented — app shows amount and recipient before wallet opens.
 
 
-13. Project scope: now vs. later
+## 13. Project scope: now vs. later
 Implemented
 Dashboard and navigation
 
@@ -602,62 +592,58 @@ A new blockchain
 A general-purpose exchange
 
 Claims of production-grade compliance or security
-14. Getting started
+## 14. Getting started
+
+```bash
 git clone https://github.com/Abbagigo13/tempo-payment-os.git
 cd tempo-payment-os
 npm install
 npm run dev
+```
 
+Open the URL that Vite prints (usually <http://localhost:5173>). No environment variables, no database, no API keys.
 
-Open the URL that Vite prints (usually http://localhost:5173). No environment variables, no database, no API keys.
+### Documentation
 
-Documentation
-Getting started — clean checkout to running app
+- [Getting started](docs/getting-started.md): clean checkout to running app
+- [Policy engine](docs/policy-engine.md): how decisions work, how to add a policy
+- [Tempo integration](docs/tempo-integration.md): reading balances, sending transfers, wallet limitations
 
-Policy engine — how decisions work, how to add a policy
+### Examples
 
-Tempo integration — reading balances, sending transfers, wallet limitations
-
-Examples
 Two standalone scripts demonstrate the primitives without React:
+
+```bash
 node examples/evaluate-policy.mjs    # run the policy engine, print decisions
 node examples/read-balance.mjs       # read a TIP-20 balance from Moderato
+```
 
-Tests
+### Tests
 
-npm test              # single run (14 tests)
+```bash
+npm test              # single run (19 tests)
 npm run test:watch    # watch mode
-Cost policy
+```
+
+### Cost policy
+
 Before adding a dependency or service, ask:
 
-Is it necessary for the next milestone?
-
-Is there a free and maintainable alternative?
-
-Does it require a card, deposit, token purchase, or paid usage?
-
-Can the project continue locally if it becomes unavailable?
+- Is it necessary for the next milestone?
+- Is there a free and maintainable alternative?
+- Does it require a card, deposit, token purchase, or paid usage?
+- Can the project continue locally if it becomes unavailable?
 
 If the answer reveals a required cost, defer or replace that feature rather than spending money.
 
-15. Vision
+## 15. Vision
+
 Make stablecoin payment workflows easier to build, safer to operate, and simpler to understand.
 
 Tempo Payment OS aims to become a reusable control plane for applications that need more than a transfer: they need policies, approvals, automation, and a clear operational record.
 
-The first goal was intentionally small: build one polished, honest, fully local demonstration of a payment request passing through rules and a workflow. That goal is met. It has since been
-xtended to a working, verified integration with the Tempo Moderato testnet — both reading live chain state and signing TIP-20 transfers through a browser wallet. No private keys touch the app, no paid infrastructure is required, and the project remains fully demonstrable locally.
+The first goal was intentionally small: build one polished, honest, fully local demonstration of a payment request passing through rules and a workflow. That goal is met. It has since been extended to a working, verified integration with the Tempo Moderato testnet, both reading live chain state and signing TIP-20 transfers through a browser wallet. No private keys touch the app, no paid infrastructure is required, and the project remains fully demonstrable locally.
 
-Disclaimer
+## Disclaimer
+
 Tempo Payment OS is an independent experimental project concept. It is not an official Tempo product and does not imply endorsement by Tempo. Network capabilities and integrations must be verified against current official documentation. Nothing in this README is financial, legal, or security advice.
-
----
-
-Paste it in, save, then:
-
-```powershell
-git add README.md
-git commit -m "README: Phase 6 complete; docs, examples, and getting-started"
-git push
-
-
