@@ -91,11 +91,9 @@ Testnet pathUSD is available at <https://tempo.xyz/faucet>. Request funds to you
 
 The payment history and the activity feed are saved in the browser's local storage (keys `tempo-payment-os:payments:v1` and `tempo-payment-os:activity:v1`), so they survive a page reload. Saved data is validated when it is loaded; damaged data is ignored and the app starts from the sample data.
 
-Because the history is saved, the daily spending limit also survives a reload. To reset it while testing, run this in the browser console:
+Because the history is saved, the daily spending limit also survives a reload. To clear it, use the **Reset demo data** button on the Dashboard. It deletes the saved payments and activity feed, then reloads the page with the sample data. It does not affect your wallet connection or anything on-chain.
 
-```js
-localStorage.removeItem("tempo-payment-os:payments:v1"); location.reload();
-```
+The storage helpers are in `src/lib/storage.js`.
 
 ## Known limitations
 
