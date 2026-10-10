@@ -1,11 +1,35 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { initialPayments } from "../data/demoData";
 import { evaluatePayment } from "../lib/policyEngine";
 import { ACTIVITY_TYPES } from "../lib/activityLog";
 import { formatCurrency } from "../lib/formatters";
+import { loadStored, saveStored } from "../lib/storage";
+
+// Bump the version if the shape of a payment ever changes.
+const STORAGE_KEY = "payments:v1";
+
+function isValidPaymentList(value) {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (p) =>
+        p &&
+        typeof p.id === "string" &&
+        typeof p.status === "string" &&
+        Number.isFinite(Number(p.amount))
+    )
+  );
+}
 
 export function usePayments(policies, activity) {
-  const [payments, setPayments] = useState(initialPayments);
+  const [payments, setPayments] = useState(() =>
+    loadStored(STORAGE_KEY, initialPayments, isValidPaymentList)
+  );
+
+  // Save the payment history whenever it changes.
+  useEffect(() => {
+    saveStored(STORAGE_KEY, payments);
+  }, [payments]);
 
   // Log every evaluation, regardless of outcome.
   function logEvaluation(payment, decision) {
