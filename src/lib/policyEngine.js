@@ -3,25 +3,43 @@
 // Local policy evaluator for Tempo Payment OS.
 //
 // IMPORTANT: These checks run in the browser only. They are UI-level
-// convenience controls, not a security boundary. See README §5.3.
+// convenience controls, not a security boundary. See README section 5.3.
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function sumRecentCompleted(payments, excludeId) {
+// Statuses that count toward the daily spending limit.
+// Pending payments are included so that many queued payments
+// cannot slip past the limit before they complete.
+const COUNTED_STATUSES = ["Completed", "Pending"];
+
+function isWithinLastDay(dateValue, now) {
+  const time = new Date(dateValue).getTime();
+  // If the date is missing or invalid, count the payment anyway.
+  // For a spending limit it is safer to over-count than to skip.
+  if (Number.isNaN(time)) return true;
+  return now - time < DAY_MS;
+}
+
+function sumRecentCounted(payments, excludeId) {
   const now = Date.now();
   return payments
     .filter((p) => p.id !== excludeId)
-    .filter((p) => p.status === "Completed")
-    .filter((p) => now - new Date(p.date).getTime() < DAY_MS)
+    .filter((p) => COUNTED_STATUSES.includes(p.status))
+    .filter((p) => isWithinLastDay(p.date, now))
     .reduce((total, p) => total + Number(p.amount || 0), 0);
 }
 
+function normalizeRecipient(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
 function isKnownRecipient(payments, recipient) {
-  const target = recipient.trim().toLowerCase();
+  const target = normalizeRecipient(recipient);
+  if (!target) return false;
   return payments.some(
     (p) =>
       p.status === "Completed" &&
-      p.recipient.trim().toLowerCase() === target
+      normalizeRecipient(p.recipient) === target
   );
 }
 
@@ -36,6 +54,15 @@ function isKnownRecipient(payments, recipient) {
  */
 export function evaluatePayment(proposedPayment, payments, policies) {
   const amount = Number(proposedPayment.amount || 0);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return {
+      result: "blocked",
+      reason: "Amount must be a positive number.",
+      evaluated: [],
+    };
+  }
+
   const evaluated = [];
 
   let blocked = null;
@@ -65,7 +92,8 @@ export function evaluatePayment(proposedPayment, payments, policies) {
 }
 
 function runPolicy(policy, context) {
-  switch (policy.id) {
+  // Number() so that "1" and 1 are treated the same.
+  switch (Number(policy.id)) {
     case 1:
       return dailySpendingLimit(context);
     case 2:
@@ -79,7 +107,7 @@ function runPolicy(policy, context) {
 
 function dailySpendingLimit({ payments, amount, proposedPayment }) {
   const limit = 5000;
-  const spentToday = sumRecentCompleted(payments, proposedPayment.id);
+  const spentToday = sumRecentCounted(payments, proposedPayment.id);
   const projected = spentToday + amount;
 
   if (projected > limit) {
@@ -87,7 +115,7 @@ function dailySpendingLimit({ payments, amount, proposedPayment }) {
       outcome: "blocked",
       detail: `Daily limit exceeded: $${projected.toFixed(
         2
-      )} of $${limit.toFixed(2)} (already spent: $${spentToday.toFixed(2)}).`,
+      )} of $${limit.toFixed(2)} (already spent or pending: $${spentToday.toFixed(2)}).`,
     };
   }
   return {

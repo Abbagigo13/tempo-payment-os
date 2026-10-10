@@ -24,7 +24,9 @@ const policiesAllOn = [
 ];
 
 // A small payment history used as the "already-spent" base.
-// Two completed payments today: $1,250 + $800 = $2,050.
+// Two completed payments: $1,250 + $800 = $2,050.
+// One pending payment: $450. Pending payments count toward the daily
+// limit, so the base total is $2,500.
 // One completed payment to a known recipient: "Acme Technologies".
 const hoursAgo = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString();
 
@@ -83,14 +85,14 @@ describe("evaluatePayment — outcomes", () => {
   });
 
   it("blocks when the projected daily total exceeds $5,000", () => {
-    // $2,050 already spent + $4,000 = $6,050 > $5,000
+    // $2,500 already spent or pending + $4,000 = $6,500 > $5,000
     const result = evaluatePayment(
       newPayment({ amount: 4000 }),
       basePayments,
       policiesAllOn
     );
     expect(result.result).toBe("blocked");
-    expect(result.reason).toContain("$6050.00");
+    expect(result.reason).toContain("$6500.00");
     expect(result.reason).toContain("$5000.00");
   });
 
@@ -113,7 +115,7 @@ describe("evaluatePayment — precedence", () => {
   it("block beats approval when both fire", () => {
     // Over $1,000 (approval) AND pushes daily total over $5,000 (block).
     const result = evaluatePayment(
-      newPayment({ amount: 3500 }), // 2050 + 3500 = 5550 > 5000
+      newPayment({ amount: 3500 }), // 2500 + 3500 = 6000 > 5000
       basePayments,
       policiesAllOn
     );
@@ -176,7 +178,7 @@ describe("evaluatePayment — disabled policies", () => {
 // ---------------------------------------------------------------------------
 
 describe("evaluatePayment — daily limit window", () => {
-  it("only counts Completed payments from the last 24 hours", () => {
+  it("ignores Failed payments and payments older than 24 hours", () => {
     const payments = [
       {
         id: "PAY-OLD",
@@ -192,15 +194,8 @@ describe("evaluatePayment — daily limit window", () => {
         status: "Failed", // not counted
         date: hoursAgo(2),
       },
-      {
-        id: "PAY-PENDING",
-        recipient: "Acme Technologies",
-        amount: 4900,
-        status: "Pending", // not counted
-        date: hoursAgo(2),
-      },
     ];
-    // Nothing recent + completed + settled, so $0 spent → $4500 is fine.
+    // Nothing recent that counts, so $0 spent → $4,500 is fine.
     const result = evaluatePayment(
       newPayment({ amount: 4500 }),
       payments,
@@ -209,28 +204,77 @@ describe("evaluatePayment — daily limit window", () => {
     expect(result.result).toBe("approval"); // over $1,000, under $5,000 daily
   });
 
+  it("counts Pending payments toward the daily limit", () => {
+    const payments = [
+      {
+        id: "PAY-PENDING",
+        recipient: "Acme Technologies",
+        amount: 4900,
+        status: "Pending", // counted
+        date: hoursAgo(2),
+      },
+    ];
+    // $4,900 pending + $200 = $5,100 > $5,000
+    const result = evaluatePayment(
+      newPayment({ amount: 200 }),
+      payments,
+      policiesAllOn
+    );
+    expect(result.result).toBe("blocked");
+    const dailyLimit = result.evaluated.find((e) => e.id === 1);
+    expect(dailyLimit.outcome).toBe("blocked");
+  });
+
+  it("counts payments with a missing or invalid date", () => {
+    const payments = [
+      {
+        id: "PAY-BAD-DATE",
+        recipient: "Acme Technologies",
+        amount: 3000,
+        status: "Completed",
+        date: "not-a-date", // invalid → counted to be safe
+      },
+      {
+        id: "PAY-NO-DATE",
+        recipient: "Acme Technologies",
+        amount: 2000,
+        status: "Completed",
+        // no date field at all → counted to be safe
+      },
+    ];
+    // $3,000 + $2,000 + $100 = $5,100 > $5,000
+    const result = evaluatePayment(
+      newPayment({ amount: 100 }),
+      payments,
+      policiesAllOn
+    );
+    expect(result.result).toBe("blocked");
+    const dailyLimit = result.evaluated.find((e) => e.id === 1);
+    expect(dailyLimit.outcome).toBe("blocked");
+  });
+
   it("excludes the payment being evaluated from the sum", () => {
-  // If we re-evaluate PAY-1001, it shouldn't double-count itself.
-  const result = evaluatePayment(
-    {
-      id: "PAY-1001",
-      recipient: "Acme Technologies",
-      amount: 1250,
-      memo: "re-evaluating existing",
-    },
-    basePayments,
-    policiesAllOn
-  );
+    // If we re-evaluate PAY-1001, it shouldn't double-count itself.
+    const result = evaluatePayment(
+      {
+        id: "PAY-1001",
+        recipient: "Acme Technologies",
+        amount: 1250,
+        memo: "re-evaluating existing",
+      },
+      basePayments,
+      policiesAllOn
+    );
 
-  // Result should still require approval (amount > $1,000).
-  expect(result.result).toBe("approval");
+    // Result should still require approval (amount > $1,000).
+    expect(result.result).toBe("approval");
 
-  // The daily limit policy's own detail should reflect $2,050 spent today
-  // (i.e. $800 from PAY-1003 + $1,250 from PAY-1001, but NOT PAY-1001's
-  // own pre-existing amount counted twice).
-  const dailyLimit = result.evaluated.find((e) => e.id === 1);
-  expect(dailyLimit.detail).toContain("$2050.00");
-});
+    // Others count as $800 (PAY-1003) + $450 (PAY-1002 pending) = $1,250.
+    // Adding this payment's $1,250 gives $2,500. If PAY-1001 were counted
+    // twice, this would show $3,750.
+    const dailyLimit = result.evaluated.find((e) => e.id === 1);
+    expect(dailyLimit.detail).toContain("$2500.00");
+  });
 
   it("each evaluated entry has name, outcome, and detail", () => {
     const result = evaluatePayment(newPayment(), basePayments, policiesAllOn);
@@ -250,6 +294,47 @@ describe("evaluatePayment — daily limit window", () => {
     );
     const policy1 = result.evaluated.find((e) => e.id === 1);
     expect(policy1.outcome).toBe("blocked");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Input validation
+// ---------------------------------------------------------------------------
+
+describe("evaluatePayment — input validation", () => {
+  it("blocks invalid amounts (NaN, zero, negative)", () => {
+    for (const amount of ["abc", 0, -5000]) {
+      const result = evaluatePayment(
+        newPayment({ amount }),
+        basePayments,
+        policiesAllOn
+      );
+      expect(result.result).toBe("blocked");
+      expect(result.reason).toContain("positive number");
+    }
+  });
+
+  it("does not crash when the recipient is missing", () => {
+    const result = evaluatePayment(
+      newPayment({ recipient: undefined }),
+      basePayments,
+      policiesAllOn
+    );
+    expect(result.result).toBe("approval"); // unknown recipient
+  });
+
+  it("treats string policy IDs the same as numeric ones", () => {
+    const stringIdPolicies = policiesAllOn.map((p) => ({
+      ...p,
+      id: String(p.id),
+    }));
+    // $2,500 + $4,000 = $6,500 > $5,000 → must still be blocked
+    const result = evaluatePayment(
+      newPayment({ amount: 4000 }),
+      basePayments,
+      stringIdPolicies
+    );
+    expect(result.result).toBe("blocked");
   });
 });
 
