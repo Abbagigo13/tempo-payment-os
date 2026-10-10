@@ -68,6 +68,27 @@ export function usePayments(policies, activity) {
     return { ok: true, payment: newPayment, decision };
   }
 
+  // Run a workflow: send its payment template through the policy engine
+  // like any other payment.
+  // Returns { outcome: "allowed" | "approval" | "blocked", message, paymentId? }
+  function runWorkflow(workflow) {
+    const template = workflow?.paymentTemplate;
+    if (!template) {
+      return {
+        outcome: "blocked",
+        message: "This workflow has no payment template.",
+      };
+    }
+
+    const result = addPayment({ ...template });
+
+    return {
+      outcome: result.decision.result,
+      message: result.decision.reason,
+      paymentId: result.payment?.id,
+    };
+  }
+
   // Log a wallet transfer that was stopped by a policy.
   function recordBlockedTransfer(payment, decision) {
     logEvaluation(payment, decision);
@@ -106,6 +127,7 @@ export function usePayments(policies, activity) {
   return {
     payments,
     addPayment,
+    runWorkflow,
     simulatePayment,
     checkPayment,
     recordTransfer,

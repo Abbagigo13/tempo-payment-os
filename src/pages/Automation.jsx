@@ -1,21 +1,21 @@
-import { useState } from "react";
-import { CalendarClock, Pause, Play, Workflow } from "lucide-react";
-import { workflows as initialWorkflows } from "../data/demoData";
+import { CalendarClock, Pause, Play, PlayCircle, Workflow } from "lucide-react";
+import { formatDate } from "../lib/formatters";
 
-export default function Automation() {
-  const [workflows, setWorkflows] = useState(initialWorkflows);
+const OUTCOME_BADGE = {
+  allowed: { className: "completed", label: "Payment created" },
+  approval: { className: "pending", label: "Created, approval required" },
+  blocked: { className: "failed", label: "Blocked by policy" },
+};
 
-  function toggleWorkflow(id) {
-    setWorkflows((current) =>
-      current.map((workflow) =>
-        workflow.id === id
-          ? {
-              ...workflow,
-              status: workflow.status === "Active" ? "Paused" : "Active",
-            }
-          : workflow
-      )
-    );
+export default function Automation({
+  workflows,
+  toggleWorkflow,
+  runWorkflow,
+  markRun,
+}) {
+  function handleRun(workflow) {
+    const outcome = runWorkflow(workflow);
+    markRun(workflow.id, outcome);
   }
 
   return (
@@ -42,43 +42,77 @@ export default function Automation() {
       </div>
 
       <div className="workflow-list">
-        {workflows.map((workflow) => (
-          <div className="workflow-card" key={workflow.id}>
-            <div className="workflow-icon">
-              <CalendarClock size={20} />
-            </div>
-            <div className="workflow-info">
-              <h3>{workflow.name}</h3>
-              <p>{workflow.description}</p>
-              <span className="workflow-schedule">{workflow.schedule}</span>
-            </div>
-            <div className="workflow-controls">
-              <span
-                className={`status-badge ${
-                  workflow.status === "Active" ? "completed" : "pending"
-                }`}
-              >
-                <span className="status-dot" />
-                {workflow.status}
-              </span>
-              <button
-                className="secondary-button small"
-                onClick={() => toggleWorkflow(workflow.id)}
-              >
-                {workflow.status === "Active" ? (
-                  <><Pause size={14} /> Pause</>
-                ) : (
-                  <><Play size={14} /> Activate</>
+        {workflows.map((workflow) => {
+          const isActive = workflow.status === "Active";
+          const lastRun = workflow.lastRunResult;
+          const badge = lastRun ? OUTCOME_BADGE[lastRun.outcome] : null;
+
+          return (
+            <div className="workflow-card" key={workflow.id}>
+              <div className="workflow-icon">
+                <CalendarClock size={20} />
+              </div>
+              <div className="workflow-info">
+                <h3>{workflow.name}</h3>
+                <p>{workflow.description}</p>
+                <span className="workflow-schedule">{workflow.schedule}</span>
+
+                {lastRun && badge && (
+                  <p className="muted-text">
+                    Last run {formatDate(workflow.lastRun)}:{" "}
+                    <span className={`status-badge ${badge.className}`}>
+                      <span className="status-dot" />
+                      {badge.label}
+                    </span>
+                    {lastRun.message ? ` ${lastRun.message}` : ""}
+                  </p>
                 )}
-              </button>
+              </div>
+              <div className="workflow-controls">
+                <span
+                  className={`status-badge ${
+                    isActive ? "completed" : "pending"
+                  }`}
+                >
+                  <span className="status-dot" />
+                  {workflow.status}
+                </span>
+                <button
+                  className="secondary-button small"
+                  onClick={() => toggleWorkflow(workflow.id)}
+                >
+                  {isActive ? (
+                    <>
+                      <Pause size={14} /> Pause
+                    </>
+                  ) : (
+                    <>
+                      <Play size={14} /> Activate
+                    </>
+                  )}
+                </button>
+                <button
+                  className="secondary-button small"
+                  onClick={() => handleRun(workflow)}
+                  disabled={!isActive}
+                  title={
+                    isActive
+                      ? "Create a payment from this workflow now"
+                      : "Activate the workflow to run it"
+                  }
+                >
+                  <PlayCircle size={14} /> Run now
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <p className="muted-text automation-footnote">
-        Workflow toggles only change local demo state. No scheduled payments
-        are created or executed.
+        "Run now" sends the workflow's payment through the policy engine and
+        adds it to Payments as Pending. Nothing is scheduled or executed
+        on-chain.
       </p>
     </div>
   );
