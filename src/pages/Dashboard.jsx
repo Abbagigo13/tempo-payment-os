@@ -11,7 +11,14 @@ import { formatCurrency } from "../lib/formatters";
 import NetworkPanel from "../components/NetworkPanel";
 import WalletPanel from "../components/WalletPanel";
 
-export default function Dashboard({ payments, onNavigate, tempo, wallet, onSend }) {
+export default function Dashboard({
+  payments,
+  onNavigate,
+  tempo,
+  wallet,
+  onSend,
+  onCheckPolicy,
+}) {
   const completed = payments.filter((p) => p.status === "Completed");
   const pending = payments.filter((p) => p.status === "Pending");
   const volume = completed.reduce((sum, p) => sum + p.amount, 0);
@@ -70,17 +77,23 @@ export default function Dashboard({ payments, onNavigate, tempo, wallet, onSend 
       <div className="panel">
         <PaymentTable payments={payments} limit={5} />
       </div>
-      {tempo && (
-  <div style={{ marginTop: "18px" }}>
-    <NetworkPanel tempo={tempo} />
-  </div>
-)}
 
-{wallet && (
-  <div style={{ marginTop: "14px" }}>
-    <WalletPanel wallet={wallet} onSend={onSend} />
-  </div>
-)}
+      {tempo && (
+        <div style={{ marginTop: "18px" }}>
+          <NetworkPanel tempo={tempo} />
+        </div>
+      )}
+
+      {wallet && (
+        <div style={{ marginTop: "14px" }}>
+          <WalletPanel
+            wallet={wallet}
+            onSend={onSend}
+            onCheckPolicy={onCheckPolicy}
+          />
+        </div>
+      )}
+
       <div className="bottom-grid">
         <div className="panel insight-panel">
           <div className="panel-title">

@@ -19,13 +19,57 @@ export default function App() {
 
   const { policies, togglePolicy } = usePolicies();
   const activity = useActivity();
-  const { payments, addPayment, runWorkflow, simulatePayment } = usePayments(
-    policies,
-    activity
-  );
+  const {
+    payments,
+    addPayment,
+    runWorkflow,
+    simulatePayment,
+    checkPayment,
+    recordTransfer,
+    recordBlockedTransfer,
+  } = usePayments(policies, activity);
   const { workflows, toggleWorkflow, markRun } = useWorkflows();
   const tempo = useTempoStatus();
   const wallet = useWallet();
+
+  // Wallet transfers go through the policy engine before anything is
+  // sent to the wallet, and are recorded in the payment history after.
+  async function handleWalletSend(args) {
+    const proposed = {
+      recipient: args.to,
+      amount: Number(args.amount),
+      currency: "USD",
+      memo: `Wallet transfer (${args.tokenKey || "TIP-20"})`,
+    };
+
+    const decision = checkPayment(proposed);
+
+    if (decision.result === "blocked") {
+      recordBlockedTransfer(proposed, decision);
+      return { ok: false, error: `Blocked by policy: ${decision.reason}` };
+    }
+
+    const result = await sendTip20Transfer(args);
+
+    if (result.ok) {
+      recordTransfer({
+        payment: proposed,
+        decision,
+        status: result.confirmed ? "Completed" : "Pending",
+        txHash: result.hash,
+      });
+    } else if (result.hash) {
+      // Submitted but reverted on-chain.
+      recordTransfer({
+        payment: proposed,
+        decision,
+        status: "Failed",
+        txHash: result.hash,
+      });
+    }
+
+    return result;
+  }
 
   function renderPage() {
     switch (activePage) {
@@ -64,7 +108,8 @@ export default function App() {
             onNavigate={setActivePage}
             tempo={tempo}
             wallet={wallet}
-            onSend={sendTip20Transfer}
+            onSend={handleWalletSend}
+            onCheckPolicy={checkPayment}
           />
         );
     }

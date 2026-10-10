@@ -8,7 +8,23 @@ import {
 } from "lucide-react";
 import { TESTNET_TOKENS, isValidAddress } from "../lib/tip20";
 
-export default function WalletPanel({ wallet, onSend }) {
+const EXPLORER_TX_URL = "https://explore.testnet.tempo.xyz/tx/";
+
+function TxLink({ hash }) {
+  return (
+    <a
+      href={`${EXPLORER_TX_URL}${hash}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="tx-link"
+    >
+      {hash.slice(0, 10)}…{hash.slice(-8)}
+      <ExternalLink size={12} />
+    </a>
+  );
+}
+
+export default function WalletPanel({ wallet, onSend, onCheckPolicy }) {
   const {
     providers,
     selected,
@@ -27,11 +43,27 @@ export default function WalletPanel({ wallet, onSend }) {
   const [confirming, setConfirming] = useState(false);
   const [sendState, setSendState] = useState({ status: "idle" });
 
+  const trimmedRecipient = recipient.trim();
+  const inputsValid =
+    isValidAddress(trimmedRecipient) && Number(amount) > 0;
+
+  // Preview what the policy engine would decide for this transfer.
+  const policyDecision =
+    inputsValid && onCheckPolicy
+      ? onCheckPolicy({
+          recipient: trimmedRecipient,
+          amount: Number(amount),
+          currency: "USD",
+        })
+      : null;
+  const policyBlocked = policyDecision?.result === "blocked";
+  const policyNeedsApproval = policyDecision?.result === "approval";
+
   const canSend =
     status === "connected" &&
     isOnCorrectChain &&
-    isValidAddress(recipient) &&
-    Number(amount) > 0;
+    inputsValid &&
+    !policyBlocked;
 
   function resetSendForm() {
     setRecipient("");
@@ -46,14 +78,23 @@ export default function WalletPanel({ wallet, onSend }) {
     const result = await onSend({
       provider: selected?.provider,
       from: address,
-      to: recipient.trim(),
+      to: trimmedRecipient,
       tokenAddress: TESTNET_TOKENS[tokenKey],
+      tokenKey,
       amount,
     });
     if (result.ok) {
-      setSendState({ status: "sent", hash: result.hash });
+      setSendState({
+        status: "sent",
+        hash: result.hash,
+        confirmed: result.confirmed,
+      });
     } else {
-      setSendState({ status: "error", error: result.error });
+      setSendState({
+        status: "error",
+        error: result.error,
+        hash: result.hash,
+      });
     }
   }
 
@@ -175,26 +216,31 @@ export default function WalletPanel({ wallet, onSend }) {
           />
         </div>
 
-        {recipient && !isValidAddress(recipient) && (
+        {recipient && !isValidAddress(trimmedRecipient) && (
           <p className="form-error">Recipient must be a 0x… address.</p>
         )}
 
+        {policyBlocked && (
+          <p className="form-error">
+            Blocked by policy: {policyDecision.reason}
+          </p>
+        )}
+
         {sendState.status === "error" && (
-          <p className="form-error">{sendState.error}</p>
+          <div>
+            <p className="form-error">{sendState.error}</p>
+            {sendState.hash && <TxLink hash={sendState.hash} />}
+          </div>
         )}
 
         {sendState.status === "sent" && (
           <div className="wallet-tx-result">
-            <strong>Transaction sent</strong>
-            <a
-              href={`https://explore.testnet.tempo.xyz/tx/${sendState.hash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="tx-link"
-            >
-              {sendState.hash.slice(0, 10)}…{sendState.hash.slice(-8)}
-              <ExternalLink size={12} />
-            </a>
+            <strong>
+              {sendState.confirmed
+                ? "Transaction confirmed"
+                : "Transaction submitted, confirmation pending"}
+            </strong>
+            <TxLink hash={sendState.hash} />
             <button className="text-button" onClick={resetSendForm}>
               Send another
             </button>
@@ -210,7 +256,7 @@ export default function WalletPanel({ wallet, onSend }) {
             >
               <Send size={14} />
               {sendState.status === "signing"
-                ? "Waiting for wallet..."
+                ? "Waiting for wallet or confirmation..."
                 : "Review & send"}
             </button>
           </div>
@@ -224,9 +270,15 @@ export default function WalletPanel({ wallet, onSend }) {
               <strong>
                 {amount} {tokenKey}
               </strong>{" "}
-              to <code>{recipient}</code> on Tempo Moderato using{" "}
+              to <code>{trimmedRecipient}</code> on Tempo Moderato using{" "}
               <strong>{selected?.info?.name}</strong>.
             </p>
+            {policyNeedsApproval && (
+              <p className="form-error">
+                Policy review: {policyDecision.reason} In a production setup
+                this transfer would wait for approval.
+              </p>
+            )}
             <p className="muted-text">
               Your wallet will ask you to sign. This is a testnet transaction —
               no real funds move.

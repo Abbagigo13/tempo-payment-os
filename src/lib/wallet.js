@@ -1,6 +1,6 @@
 // src/lib/wallet.js
-import { createWalletClient, custom } from "viem";
-import { tempoTestnet } from "./tempo.js";
+import { createWalletClient, custom, isAddress } from "viem";
+import { tempoTestnet, publicClient } from "./tempo.js";
 import { TIP20_ABI } from "./tip20Abi.js";
 import { parseTokenAmount, getTokenDecimals } from "./tip20.js";
 
@@ -13,6 +13,9 @@ const CHAIN_PARAMS = {
   rpcUrls: tempoTestnet.rpcUrls.default.http,
   blockExplorerUrls: [tempoTestnet.blockExplorers.default.url],
 };
+
+// How long to wait for the transaction to be confirmed on-chain.
+const RECEIPT_TIMEOUT_MS = 60_000;
 
 export function discoverProviders(onFound) {
   function handleAnnounce(event) {
@@ -62,6 +65,13 @@ export async function switchProviderToTempo(provider) {
 /**
  * Send a TIP-20 transfer using the given provider.
  * Reads `decimals` from the token contract — never hardcode it.
+ *
+ * Returns:
+ *   { ok: true, hash, confirmed: true }   confirmed on-chain
+ *   { ok: true, hash, confirmed: false }  submitted, but not confirmed
+ *                                         within the timeout
+ *   { ok: false, error, hash? }           failed (hash is set if the
+ *                                         transaction reverted on-chain)
  */
 export async function sendTip20Transfer({
   provider,
@@ -72,6 +82,29 @@ export async function sendTip20Transfer({
 }) {
   if (!provider) {
     return { ok: false, error: "No wallet provider." };
+  }
+
+  if (!isAddress(from)) {
+    return { ok: false, error: "Sender address is invalid." };
+  }
+  if (!isAddress(to)) {
+    return { ok: false, error: "Recipient address is invalid." };
+  }
+  if (!isAddress(tokenAddress)) {
+    return { ok: false, error: "Token address is invalid." };
+  }
+
+  let chainId;
+  try {
+    chainId = await getChainIdFromProvider(provider);
+  } catch {
+    return { ok: false, error: "Could not read the wallet's network." };
+  }
+  if (chainId !== tempoTestnet.id) {
+    return {
+      ok: false,
+      error: `Wallet is on the wrong network. Switch to ${tempoTestnet.name} (chain ID ${tempoTestnet.id}).`,
+    };
   }
 
   let decimals;
@@ -88,6 +121,10 @@ export async function sendTip20Transfer({
     return { ok: false, error: error.message };
   }
 
+  if (rawAmount <= 0n) {
+    return { ok: false, error: "Amount must be greater than zero." };
+  }
+
   console.log("[tip20] SENDING", {
     token: tokenAddress,
     recipient: to,
@@ -96,13 +133,14 @@ export async function sendTip20Transfer({
     decimals,
   });
 
+  let hash;
   try {
     const walletClient = createWalletClient({
       chain: tempoTestnet,
       transport: custom(provider),
     });
 
-    const hash = await walletClient.writeContract({
+    hash = await walletClient.writeContract({
       account: from,
       address: tokenAddress,
       abi: TIP20_ABI,
@@ -110,12 +148,34 @@ export async function sendTip20Transfer({
       args: [to, rawAmount],
       gas: 300000n,
     });
-
-    return { ok: true, hash };
   } catch (error) {
     return {
       ok: false,
       error: error?.shortMessage || error?.message || "Transaction rejected.",
     };
   }
+
+  // The wallet has submitted the transaction. Wait for it to be mined
+  // and check that it actually succeeded.
+  let receipt;
+  try {
+    receipt = await publicClient.waitForTransactionReceipt({
+      hash,
+      timeout: RECEIPT_TIMEOUT_MS,
+    });
+  } catch {
+    // Timed out or the RPC failed. The transaction may still confirm
+    // later, so report it as submitted but not yet confirmed.
+    return { ok: true, hash, confirmed: false };
+  }
+
+  if (receipt.status !== "success") {
+    return {
+      ok: false,
+      hash,
+      error: "Transaction was submitted but reverted on-chain.",
+    };
+  }
+
+  return { ok: true, hash, confirmed: true };
 }
