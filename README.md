@@ -621,7 +621,7 @@ node examples/read-balance.mjs       # read a TIP-20 balance from Moderato
 ### Tests
 
 ```bash
-npm test              # single run (19 tests)
+npm test              # single run (28 tests)
 npm run test:watch    # watch mode
 ```
 

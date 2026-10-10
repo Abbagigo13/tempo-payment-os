@@ -28,7 +28,7 @@ That's it. No environment variables, no database, no API keys.
 npm test
 ```
 
-19 tests, all green, covering the policy engine.
+28 tests, all green, covering the policy engine and the local storage helpers.
 
 ## What works out of the box
 
