@@ -12,50 +12,48 @@ From a clean clone to a running app in three commands.
 ## Run it
 
 ```bash
-git clone https://github.com/Abbagabio13/tempo-payment-os.git
+git clone https://github.com/Abbagigo13/tempo-payment-os.git
 cd tempo-payment-os
 npm install
 npm run dev
+```
 
-Open the URL that Vite prints (usually http://localhost:5173).
+Open the URL that Vite prints (usually <http://localhost:5173>).
 
 That's it. No environment variables, no database, no API keys.
 
-Run the tests
+## Run the tests
+
+```bash
 npm test
-14 tests, all green, covering the policy engine.
+```
 
-What works out of the box
-.Dashboard — payment overview with live Tempo network panel
+19 tests, all green, covering the policy engine.
 
-.Payments — create, block, or route payments through the policy engine; simulate execution
+## What works out of the box
 
-.Policies — toggle policy rules; changes affect the payment modal live
+- **Dashboard**: payment overview with a live Tempo network panel
+- **Payments**: create, block, or route payments through the policy engine; simulate execution
+- **Policies**: toggle policy rules; changes affect the payment modal live
+- **Automation**: pause or activate workflows; "Run now" creates a payment
+- **Developers**: live code examples and a policy-engine sandbox
 
-.Automation — pause/activate workflows; "Run now" creates a payment
+## What requires a wallet
 
-.Developers — live code examples and a policy-engine sandbox
-
-What requires a wallet
 The Browser wallet panel on the Dashboard connects to MetaMask (verified) or any EIP-6963 wallet. A testnet transfer requires:
 
-1.Connecting a wallet
+1. Connecting a wallet
+2. Being on the Tempo Moderato testnet (chain ID 42431)
+3. Having pathUSD on that address
 
-2.Being on the Tempo Moderato testnet (chain ID 42431)
+Get testnet funds at the Tempo faucet: <https://tempo.xyz/faucet>
 
-3.Having pathUSD on that address
+## Troubleshooting
 
-Get testnet funds at the Tempo faucet (see tempo-integration.md).
-
-Troubleshooting
-npm install hangs — kill it (Ctrl+C), run npm cache clean --force, retry
-
-Blank page — check the browser console for import errors; usually a missing file
-
-Wallet connect fails — install MetaMask if you don't have a wallet; check that extensions aren't blocking window.ethereum
-
-Transfer fails with "insufficient balance" — you're trying to send more than you have, or the token dropdown is on a different token than the one you hold
-
+- **`npm install` hangs**: press Ctrl+C, run `npm cache clean --force`, then retry.
+- **Blank page**: check the browser console for import errors; usually a missing file.
+- **Wallet connect fails**: install MetaMask if you don't have a wallet, and check that no extension is blocking `window.ethereum`.
+- **Transfer fails with "insufficient balance"**: you're trying to send more than you have, or the token dropdown is on a different token than the one you hold.
 Save.
 
 ---
