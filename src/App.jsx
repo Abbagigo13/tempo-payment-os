@@ -33,15 +33,17 @@ export default function App() {
   const tempo = useTempoStatus();
   const wallet = useWallet();
 
-  // Clear the saved payments and activity feed, then reload so the app
-  // starts again from the sample data.
+  // Clear all saved demo data, then reload so the app starts again from
+  // the sample data.
   function handleReset() {
     const confirmed = window.confirm(
-      "Reset demo data? This clears the saved payment history and activity feed and restores the sample data. Nothing on-chain is affected."
+      "Reset demo data? This clears the saved payment history, activity feed, policy settings and workflow state, and restores the sample data. Nothing on-chain is affected."
     );
     if (!confirmed) return;
     clearStored("payments:v1");
     clearStored("activity:v1");
+    clearStored("policies:v1");
+    clearStored("workflows:v1");
     window.location.reload();
   }
 
