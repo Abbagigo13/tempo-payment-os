@@ -89,9 +89,20 @@ Testnet pathUSD is available at <https://tempo.xyz/faucet>. Request funds to you
 
 ## Saved data
 
-The payment history and the activity feed are saved in the browser's local storage (keys `tempo-payment-os:payments:v1` and `tempo-payment-os:activity:v1`), so they survive a page reload. Saved data is validated when it is loaded; damaged data is ignored and the app starts from the sample data.
+The app saves its state in the browser's local storage, so it survives a page reload:
 
-Because the history is saved, the daily spending limit also survives a reload. To clear it, use the **Reset demo data** button on the Dashboard. It deletes the saved payments and activity feed, then reloads the page with the sample data. It does not affect your wallet connection or anything on-chain.
+| Key | What it holds |
+| --- | --- |
+| `tempo-payment-os:payments:v1` | The payment history |
+| `tempo-payment-os:activity:v1` | The activity feed (the most recent 200 events) |
+| `tempo-payment-os:policies:v1` | Which policies are switched on or off |
+| `tempo-payment-os:workflows:v1` | Each workflow's status and last run result |
+
+Policy and workflow definitions (names, descriptions, payment templates) always come from `src/data/demoData.js`. Only the settings above are saved on top of them, so a change to a definition in code shows up even if someone already has saved data.
+
+Saved data is validated when it is loaded. Damaged data is ignored and the app falls back to the sample data. The version in each key (`v1`) is there so a future change to the saved format can use a new key without breaking old data.
+
+Because the history is saved, the daily spending limit also survives a reload. To clear it, use the **Reset demo data** button on the Dashboard. It deletes all four saved items and reloads the page with the sample data. It does not affect your wallet connection or anything on-chain.
 
 The storage helpers are in `src/lib/storage.js`.
 
@@ -100,4 +111,3 @@ The storage helpers are in `src/lib/storage.js`.
 1. No wallet connect restore across reloads. You reconnect each session.
 2. Wallets may mis-display TIP-20 amounts in their signing dialog. Always verify in the app's confirmation box first.
 3. Saved data lives only in one browser on one device. Clearing site data removes it.
-4. Policy on/off settings and workflow "last run" results are not saved yet and reset on reload.
