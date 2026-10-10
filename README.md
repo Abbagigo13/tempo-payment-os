@@ -603,7 +603,7 @@ A general-purpose exchange
 
 Claims of production-grade compliance or security
 14. Getting started
-git clone https://github.com/Abbagabio13/tempo-payment-os.git
+git clone https://github.com/Abbagigo13/tempo-payment-os.git
 cd tempo-payment-os
 npm install
 npm run dev
