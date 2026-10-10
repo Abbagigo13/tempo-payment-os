@@ -54,9 +54,6 @@ Get testnet funds at the Tempo faucet: <https://tempo.xyz/faucet>
 - **Blank page**: check the browser console for import errors; usually a missing file.
 - **Wallet connect fails**: install MetaMask if you don't have a wallet, and check that no extension is blocking `window.ethereum`.
 - **Transfer fails with "insufficient balance"**: you're trying to send more than you have, or the token dropdown is on a different token than the one you hold.
-Save.
-
----
 
 ### File 2b — `docs/policy-engine.md`
 
@@ -134,11 +131,6 @@ That's the whole extension pattern. Policies are just functions that return one 
 Security boundary
 These checks run in the browser. They are convenience controls, not a security boundary. A user who can bypass the app can bypass them. Production deployments must enforce critical rules at a trusted execution layer — smart-account permissions, on-chain contracts, or token-level policies.
 
-
-Save.
-
----
-
 ### File 2c — `docs/tempo-integration.md`
 
 Right-click `docs` → **New File** → name it `tempo-integration.md`. Paste:
@@ -212,14 +204,3 @@ Known limitations
 2.Wallets may mis-display TIP-20 amounts in their signing dialog; always verify in the app's confirmation box first
 
 3.No memo support yet on transfers (Tempo supports memos natively — this is a planned addition)
-
-
-Save.
-
----
-
-## Report back
-
-When all three files exist (`docs/getting-started.md`, `docs/policy-engine.md`, `docs/tempo-integration.md`), say **"done"** and we move to Step 3 (the `examples/` folder with 2 runnable scripts).
-
-If anything is unclear, ask — don't push through.
