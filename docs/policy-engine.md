@@ -22,6 +22,19 @@ Returns:
 }
 ```
 
+## Where it is used
+
+Every way of creating a payment goes through the engine:
+
+| Entry point | What happens |
+| --- | --- |
+| Payments page (New payment) | Evaluated on submit. Blocked payments are not created; others are added as Pending. |
+| Automation page (Run now) | The workflow's payment template is evaluated like any other payment. |
+| Dashboard wallet panel | Evaluated before anything is sent to the wallet. A blocked transfer is never signed. An "approval" result shows a warning in the confirm box. After sending, the transfer is added to the payment history as Completed (confirmed on-chain), Pending (submitted, not yet confirmed) or Failed (reverted). |
+| Developers page | A sandbox that evaluates a hypothetical payment. Nothing is created. |
+
+Wallet transfers are recorded in the payment history, so they count toward the daily limit.
+
 ## Input validation
 
 Before any policy runs, the amount is checked. If it is not a finite number greater than zero (for example `"abc"`, `0`, or `-5000`), the result is `blocked` with the reason "Amount must be a positive number." and `evaluated` is empty.

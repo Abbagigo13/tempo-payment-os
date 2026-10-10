@@ -35,9 +35,22 @@ The write path is:
 
 1. The user connects a wallet via EIP-6963 (`src/hooks/useWallet.js`).
 2. The user picks a token, recipient, and amount in the Wallet panel.
-3. The app calls `sendTip20Transfer` (`src/lib/wallet.js`).
-4. The wallet extension signs and submits.
-5. The hash is returned and displayed with an explorer link.
+3. The policy engine evaluates the transfer (`handleWalletSend` in `src/App.jsx`). A blocked transfer stops here and is never sent to the wallet. An "approval" result shows a warning in the confirm box.
+4. The app calls `sendTip20Transfer` (`src/lib/wallet.js`), which validates the addresses, checks that the wallet is on Tempo Moderato, reads the token's decimals, and rejects zero amounts.
+5. The wallet extension signs and submits.
+6. The app waits for the transaction receipt (up to 60 seconds) and checks that it succeeded.
+7. The result is shown with an explorer link and recorded in the payment history.
+
+### Result states
+
+`sendTip20Transfer` returns one of:
+
+| Result | Meaning | Recorded as |
+| --- | --- | --- |
+| `{ ok: true, confirmed: true, hash }` | Mined and succeeded on-chain | Completed |
+| `{ ok: true, confirmed: false, hash }` | Submitted, but not confirmed within the timeout. It may still confirm later. | Pending |
+| `{ ok: false, hash, error }` | Submitted, but reverted on-chain | Failed |
+| `{ ok: false, error }` | Never submitted (invalid input, wrong network, wallet rejected) | Not recorded |
 
 ## Important notes
 
@@ -67,3 +80,4 @@ Testnet pathUSD is available at <https://tempo.xyz/faucet>. Request funds to you
 1. No wallet connect restore across reloads. You reconnect each session.
 2. Wallets may mis-display TIP-20 amounts in their signing dialog. Always verify in the app's confirmation box first.
 3. No memo support yet on transfers (Tempo supports memos natively; this is a planned addition).
+4. The payment history lives in memory. Reloading the page resets it, so the daily limit starts again from the sample data.
