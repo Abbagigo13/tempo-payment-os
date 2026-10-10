@@ -35,11 +35,13 @@ export default function App() {
   // Wallet transfers go through the policy engine before anything is
   // sent to the wallet, and are recorded in the payment history after.
   async function handleWalletSend(args) {
+    const userMemo = String(args.memo ?? "").trim();
+
     const proposed = {
       recipient: args.to,
       amount: Number(args.amount),
       currency: "USD",
-      memo: `Wallet transfer (${args.tokenKey || "TIP-20"})`,
+      memo: userMemo || `Wallet transfer (${args.tokenKey || "TIP-20"})`,
     };
 
     const decision = checkPayment(proposed);

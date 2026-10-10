@@ -2195,3 +2195,9 @@ select:focus-visible {
   flex: 1;
   font-weight: 500;
 }
+/* Disabled buttons look dimmed and show a not-allowed cursor */
+.primary-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

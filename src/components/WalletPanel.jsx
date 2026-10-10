@@ -7,6 +7,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { TESTNET_TOKENS, isValidAddress } from "../lib/tip20";
+import { encodeMemo, MEMO_MAX_BYTES } from "../lib/wallet";
 
 const EXPLORER_TX_URL = "https://explore.testnet.tempo.xyz/tx/";
 
@@ -39,13 +40,18 @@ export default function WalletPanel({ wallet, onSend, onCheckPolicy }) {
 
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  const [memo, setMemo] = useState("");
   const [tokenKey, setTokenKey] = useState("pathUSD");
   const [confirming, setConfirming] = useState(false);
   const [sendState, setSendState] = useState({ status: "idle" });
 
   const trimmedRecipient = recipient.trim();
+  const trimmedMemo = memo.trim();
+  const memoCheck = encodeMemo(trimmedMemo);
+  const memoBytes = new TextEncoder().encode(trimmedMemo).length;
+
   const inputsValid =
-    isValidAddress(trimmedRecipient) && Number(amount) > 0;
+    isValidAddress(trimmedRecipient) && Number(amount) > 0 && memoCheck.ok;
 
   // Preview what the policy engine would decide for this transfer.
   const policyDecision =
@@ -68,6 +74,7 @@ export default function WalletPanel({ wallet, onSend, onCheckPolicy }) {
   function resetSendForm() {
     setRecipient("");
     setAmount("");
+    setMemo("");
     setSendState({ status: "idle" });
     setConfirming(false);
   }
@@ -82,6 +89,7 @@ export default function WalletPanel({ wallet, onSend, onCheckPolicy }) {
       tokenAddress: TESTNET_TOKENS[tokenKey],
       tokenKey,
       amount,
+      memo: trimmedMemo,
     });
     if (result.ok) {
       setSendState({
@@ -216,6 +224,24 @@ export default function WalletPanel({ wallet, onSend, onCheckPolicy }) {
           />
         </div>
 
+        <div style={{ marginTop: "10px" }}>
+          <input
+            type="text"
+            className="network-input"
+            placeholder="Memo (optional), e.g. INV-12345"
+            value={memo}
+            onChange={(event) => setMemo(event.target.value)}
+            disabled={sendState.status === "signing"}
+          />
+          {trimmedMemo && (
+            <p className={memoCheck.ok ? "muted-text" : "form-error"}>
+              {memoCheck.ok
+                ? `Memo: ${memoBytes} of ${MEMO_MAX_BYTES} bytes`
+                : memoCheck.error}
+            </p>
+          )}
+        </div>
+
         {recipient && !isValidAddress(trimmedRecipient) && (
           <p className="form-error">Recipient must be a 0x… address.</p>
         )}
@@ -273,6 +299,11 @@ export default function WalletPanel({ wallet, onSend, onCheckPolicy }) {
               to <code>{trimmedRecipient}</code> on Tempo Moderato using{" "}
               <strong>{selected?.info?.name}</strong>.
             </p>
+            {trimmedMemo && (
+              <p>
+                Memo: <code>{trimmedMemo}</code>
+              </p>
+            )}
             {policyNeedsApproval && (
               <p className="form-error">
                 Policy review: {policyDecision.reason} In a production setup
