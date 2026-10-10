@@ -25,17 +25,24 @@ const decision = evaluatePayment(
 //   }`,
 
   tip20: `import { publicClient } from "./lib/tempo";
-import { TIP20_ABI } from "./lib/tip20";
+import { TIP20_ABI } from "./lib/tip20Abi";
+import { getTokenDecimals, formatTokenAmount } from "./lib/tip20";
+
+const token = "0x20c0000000000000000000000000000000000000"; // pathUSD
 
 const raw = await publicClient.readContract({
-  address: "0x20c0000000000000000000000000000000000000", // pathUSD
+  address: token,
   abi: TIP20_ABI,
   functionName: "balanceOf",
   args: ["0x0000000000000000000000000000000000000001"],
 });
 
-// → 12132632766299000000000000n (bigint, raw units)
-// formatTokenAmount(raw, 18) → "121326327.66299"`,
+// Always read decimals from the contract. Never hardcode them.
+const decimals = await getTokenDecimals(token);
+
+// → raw: 12500000n (bigint, raw units)
+// → decimals: 6 for pathUSD
+// formatTokenAmount(raw, decimals) → "12.5"`,
 
   create: `const result = addPayment({
   recipient: "Acme Technologies",
@@ -112,7 +119,7 @@ export default function Developers({ policies = [], payments = [] }) {
           </div>
           <div className="developer-feature">
             <Check size={15} />
-            Read-only Tempo testnet access via viem
+            Tempo testnet reads and wallet-signed transfers via viem
           </div>
           <div className="developer-feature">
             <Check size={15} />
@@ -219,13 +226,22 @@ export default function Developers({ policies = [], payments = [] }) {
           <span className="roadmap-number">03</span>
           <div>
             <strong>Tempo testnet — write</strong>
-            <p>Wallet connect, signed TIP-20 transfers with memos, transaction verification.</p>
+            <p>Wallet connect, policy-checked TIP-20 transfers signed in your wallet, and on-chain receipt verification.</p>
+          </div>
+          <span className="roadmap-state done">Current</span>
+        </div>
+
+        <div className="roadmap-row">
+          <span className="roadmap-number">04</span>
+          <div>
+            <strong>Transfer memos</strong>
+            <p>Attach a memo to TIP-20 transfers using Tempo's native memo support.</p>
           </div>
           <span className="roadmap-state">Next</span>
         </div>
 
         <div className="roadmap-row">
-          <span className="roadmap-number">04</span>
+          <span className="roadmap-number">05</span>
           <div>
             <strong>Authenticated API</strong>
             <p>Server-side validation, access control, and durable audit events.</p>
