@@ -2201,3 +2201,14 @@ select:focus-visible {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* Developers page sandbox: let the fields shrink to fit instead of overflowing */
+.tryit-form > * {
+  min-width: 0;
+}
+.tryit-form input,
+.tryit-form label input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
