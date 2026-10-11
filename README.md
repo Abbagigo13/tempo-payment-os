@@ -609,6 +609,7 @@ Open the URL that Vite prints (usually <http://localhost:5173>). No environment 
 - [Policy engine](docs/policy-engine.md): how decisions work, how to add a policy
 - [Tempo integration](docs/tempo-integration.md): reading balances, sending transfers, wallet limitations
 - [Policy vault](docs/vault.md): the on-chain contract that enforces the limits
+- [Demo guide](docs/demo-guide.md): a ten-minute walkthrough, and what is real versus simulated
 
 ### Examples
 
