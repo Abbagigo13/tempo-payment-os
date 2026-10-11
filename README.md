@@ -53,7 +53,7 @@ The project is **not a new blockchain, wallet, exchange, or general-purpose bank
 
 A company can configure a policy that allows routine payments up to a set limit, requires an additional approval above that limit, and blocks transfers to recipients outside an approved list. The payment engine evaluates the request before it attempts to execute it.
 
-In the current prototype, policy evaluation runs locally and payments are simulated. Actual enforcement against on-chain transfers depends on the integration and security model implemented for the selected Tempo features. A frontend rule alone is not a security boundary.
+In the current prototype, policy evaluation runs locally and payments are simulated. Actual enforcement against on-chain transfers depends on the integration and security model implemented for the selected Tempo features. A frontend rule alone is not a security boundary. The repository also includes an on-chain policy vault (see docs/vault.md) that enforces a daily limit and an approval threshold inside a smart contract. It is a separate testnet demo and has not been audited.
 
 ## 3. Why Tempo?
 
@@ -185,7 +185,7 @@ Covers: all outcome types, precedence rules, disabled policies, 24-hour window, 
 
 Run with npm test
 
-Security boundary: These rules are application-level checks. A user who can bypass the application may bypass them unless the relevant controls are enforced by smart-account permissions, contracts, token policies, or another trusted execution layer. Production use requires threat modeling, secure key management, authorization checks, and independent testing.
+Security boundary: These rules are application-level checks. A user who can bypass the application may bypass them unless the relevant controls are enforced by smart-account permissions, contracts, token policies, or another trusted execution layer. Production use requires threat modeling, secure key management, authorization checks, and independent testing. The on-chain policy vault (docs/vault.md) shows how two of these rules can be enforced in a contract.
 5.4 Automation — implemented (local)
 Workflows are backed by a useWorkflows hook. Toggling Active/Paused persists across navigation, and Run now creates a synthetic payment through the policy engine — leaving a full record in both the payments list and the activity log.
 
