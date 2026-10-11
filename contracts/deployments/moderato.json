@@ -1,0 +1,12 @@
+{
+  "network": "Tempo Moderato",
+  "chainId": 42431,
+  "address": "0xa9e2dc607ded8a82eba3346aab9a3598162c3bc8",
+  "token": "0x20c0000000000000000000000000000000000000",
+  "deployTx": "0xfa04b8aa86cb847e6f6f0fdb2d11b358cb1ca24640c574f329f3bbef95c4eaf8",
+  "blockNumber": "39153629",
+  "owner": "0x6170873349c100A2C23f9C51383a6aA7b16Aa17C",
+  "approver": "0x6170873349c100A2C23f9C51383a6aA7b16Aa17C",
+  "dailyLimit": "5000000000",
+  "approvalThreshold": "1000000000"
+}
