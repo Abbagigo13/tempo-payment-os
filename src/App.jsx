@@ -135,7 +135,11 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar activePage={activePage} setActivePage={setActivePage} />
+      <Sidebar
+        activePage={activePage}
+        setActivePage={setActivePage}
+        tempo={tempo}
+      />
       <main className="main-area">
         <Topbar activePage={activePage} />
         {renderPage()}

@@ -16,7 +16,31 @@ const navItems = [
   { id: "developers", label: "Developers", icon: Blocks },
 ];
 
-export default function Sidebar({ activePage, setActivePage }) {
+const DOT_COLORS = {
+  connected: "#3ecf8e",
+  checking: "#f5a524",
+  error: "#f31260",
+};
+
+// What the badge at the bottom of the sidebar says, based on the
+// live status of the Tempo RPC connection.
+function describeNetwork(status) {
+  if (status === "connected") {
+    return { title: "Tempo testnet", detail: "Connected", tone: "connected" };
+  }
+  if (status === "error") {
+    return {
+      title: "Tempo unreachable",
+      detail: "Simulation mode still works",
+      tone: "error",
+    };
+  }
+  return { title: "Tempo testnet", detail: "Checking...", tone: "checking" };
+}
+
+export default function Sidebar({ activePage, setActivePage, tempo }) {
+  const network = describeNetwork(tempo?.status);
+
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -46,10 +70,13 @@ export default function Sidebar({ activePage, setActivePage }) {
 
       <div className="sidebar-bottom">
         <div className="network-status">
-          <span className="status-dot" />
+          <span
+            className="status-dot"
+            style={{ background: DOT_COLORS[network.tone] }}
+          />
           <div>
-            <strong>Local simulation</strong>
-            <small>No blockchain connection</small>
+            <strong>{network.title}</strong>
+            <small>{network.detail}</small>
           </div>
         </div>
         <div className="sidebar-footer">
