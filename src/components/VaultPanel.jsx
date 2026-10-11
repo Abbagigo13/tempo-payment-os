@@ -7,7 +7,6 @@ import {
   Check,
   X,
 } from "lucide-react";
-import { useVault } from "../hooks/useVault";
 import {
   submitVaultPayment,
   approveVaultPayment,
@@ -57,8 +56,8 @@ function TxLink({ hash }) {
   );
 }
 
-export default function VaultPanel({ wallet }) {
-  const { state, status, error, refresh } = useVault();
+export default function VaultPanel({ wallet, vault }) {
+  const { state, status, error, refresh } = vault;
   const {
     selected,
     status: walletStatus,

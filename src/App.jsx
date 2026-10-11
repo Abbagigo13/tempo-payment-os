@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import Dashboard from "./pages/Dashboard";
@@ -12,7 +12,9 @@ import { useActivity } from "./hooks/useActivity";
 import { useWorkflows } from "./hooks/useWorkflows";
 import { useTempoStatus } from "./hooks/useTempoStatus";
 import { useWallet } from "./hooks/useWallet";
+import { useVault } from "./hooks/useVault";
 import { sendTip20Transfer } from "./lib/wallet";
+import { vaultPaymentsAsRecords } from "./lib/vaultPayments";
 import { clearStored } from "./lib/storage";
 
 export default function App() {
@@ -32,6 +34,14 @@ export default function App() {
   const { workflows, toggleWorkflow, markRun } = useWorkflows();
   const tempo = useTempoStatus();
   const wallet = useWallet();
+
+  // One shared read of the on-chain vault, used by the Dashboard panel and
+  // the Payments page, so the chain is not re-read on every page visit.
+  const vault = useVault();
+  const vaultPayments = useMemo(
+    () => vaultPaymentsAsRecords(vault.state),
+    [vault.state]
+  );
 
   // Clear all saved demo data, then reload so the app starts again from
   // the sample data.
@@ -94,6 +104,7 @@ export default function App() {
         return (
           <Payments
             payments={payments}
+            vaultPayments={vaultPayments}
             policies={policies}
             addPayment={addPayment}
             simulatePayment={simulatePayment}
@@ -125,6 +136,7 @@ export default function App() {
             onNavigate={setActivePage}
             tempo={tempo}
             wallet={wallet}
+            vault={vault}
             onSend={handleWalletSend}
             onCheckPolicy={checkPayment}
             onReset={handleReset}

@@ -18,6 +18,7 @@ export default function Dashboard({
   onNavigate,
   tempo,
   wallet,
+  vault,
   onSend,
   onCheckPolicy,
   onReset,
@@ -109,9 +110,9 @@ export default function Dashboard({
         </div>
       )}
 
-      {wallet && (
+      {wallet && vault && (
         <div style={{ marginTop: "14px" }}>
-          <VaultPanel wallet={wallet} />
+          <VaultPanel wallet={wallet} vault={vault} />
         </div>
       )}
 
