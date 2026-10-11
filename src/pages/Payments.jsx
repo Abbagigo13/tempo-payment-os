@@ -4,9 +4,11 @@ import PaymentTable from "../components/PaymentTable";
 import PaymentModal from "../components/PaymentModal";
 import PaymentDrawer from "../components/PaymentDrawer";
 import ActivityPanel from "../components/ActivityPanel";
+import { mergePaymentLists } from "../lib/vaultPayments";
 
 export default function Payments({
   payments,
+  vaultPayments = [],
   policies,
   addPayment,
   simulatePayment,
@@ -17,18 +19,23 @@ export default function Payments({
   const [filter, setFilter] = useState("All");
   const [selectedPayment, setSelectedPayment] = useState(null);
 
-  const filteredPayments = payments.filter((payment) => {
+  // The app's own payments plus read-only records of on-chain vault payments.
+  const allPayments = mergePaymentLists(payments, vaultPayments);
+
+  const query = search.toLowerCase();
+  const filteredPayments = allPayments.filter((payment) => {
     const matchesSearch =
-      payment.id.toLowerCase().includes(search.toLowerCase()) ||
-      payment.recipient.toLowerCase().includes(search.toLowerCase()) ||
-      payment.memo.toLowerCase().includes(search.toLowerCase());
+      payment.id.toLowerCase().includes(query) ||
+      payment.recipient.toLowerCase().includes(query) ||
+      (payment.memo || "").toLowerCase().includes(query) ||
+      (payment.address || "").toLowerCase().includes(query);
 
     const matchesFilter = filter === "All" || payment.status === filter;
     return matchesSearch && matchesFilter;
   });
 
   const liveSelected = selectedPayment
-    ? payments.find((p) => p.id === selectedPayment.id) || null
+    ? allPayments.find((p) => p.id === selectedPayment.id) || null
     : null;
 
   return (
@@ -36,7 +43,10 @@ export default function Payments({
       <div className="page-toolbar">
         <div>
           <h2>Payment instructions</h2>
-          <p>Manage your simulated outgoing payments.</p>
+          <p>
+            Simulated payments, plus read-only records of payments sent through
+            the on-chain vault.
+          </p>
         </div>
         <button className="primary-button" onClick={() => setShowModal(true)}>
           <Plus size={17} />
@@ -64,6 +74,7 @@ export default function Payments({
             <option>Pending</option>
             <option>Completed</option>
             <option>Failed</option>
+            <option>Rejected</option>
           </select>
         </div>
 
@@ -78,7 +89,8 @@ export default function Payments({
           <h3>Payment simulator</h3>
           <p>
             Complete a pending payment locally to test the interface.
-            This does not send a blockchain transaction.
+            This does not send a blockchain transaction. Vault payments are
+            decided on-chain by the vault approver and cannot be simulated.
           </p>
         </div>
         <div className="simulator-list">

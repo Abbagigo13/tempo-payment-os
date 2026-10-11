@@ -34,3 +34,11 @@ export function vaultPaymentsAsRecords(state) {
       vaultAddress: state.address,
     }));
 }
+
+// Combine the app's payments with the vault's, newest first.
+// Does not change either input list.
+export function mergePaymentLists(payments, vaultPayments) {
+  return [...payments, ...vaultPayments].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { vaultPaymentsAsRecords } from "./vaultPayments";
+import { vaultPaymentsAsRecords, mergePaymentLists } from "./vaultPayments";
 
 const ADDRESS = "0x17564734b5225fD427c227BEB8E349663699B477";
 
@@ -71,5 +71,30 @@ describe("vaultPaymentsAsRecords", () => {
     expect(pending.date).toBe(new Date(1760000300 * 1000).toISOString());
     expect(executed.amount).toBe(9.999979);
     expect(executed.memo).toBe("No memo");
+  });
+});
+
+describe("mergePaymentLists", () => {
+  const appPayments = [
+    { id: "PAY-B", date: new Date(1760000250 * 1000).toISOString() },
+    { id: "PAY-A", date: new Date(1760000050 * 1000).toISOString() },
+  ];
+  const vaultPayments = vaultPaymentsAsRecords(state);
+
+  it("sorts both lists together, newest first", () => {
+    const merged = mergePaymentLists(appPayments, vaultPayments);
+    expect(merged.map((p) => p.id)).toEqual([
+      "VAULT-3",
+      "PAY-B",
+      "VAULT-2",
+      "VAULT-1",
+      "PAY-A",
+    ]);
+  });
+
+  it("does not change the lists it is given", () => {
+    const before = appPayments.map((p) => p.id);
+    mergePaymentLists(appPayments, vaultPayments);
+    expect(appPayments.map((p) => p.id)).toEqual(before);
   });
 });
