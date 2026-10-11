@@ -11,6 +11,7 @@ import PaymentTable from "../components/PaymentTable";
 import { formatCurrency } from "../lib/formatters";
 import NetworkPanel from "../components/NetworkPanel";
 import WalletPanel from "../components/WalletPanel";
+import VaultPanel from "../components/VaultPanel";
 
 export default function Dashboard({
   payments,
@@ -105,6 +106,12 @@ export default function Dashboard({
             onSend={onSend}
             onCheckPolicy={onCheckPolicy}
           />
+        </div>
+      )}
+
+      {wallet && (
+        <div style={{ marginTop: "14px" }}>
+          <VaultPanel wallet={wallet} />
         </div>
       )}
 
