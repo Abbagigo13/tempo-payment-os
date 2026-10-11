@@ -4,6 +4,8 @@ The policy engine is a pure function. Given a proposed payment, the current paym
 
 It lives in `src/lib/policyEngine.js`, and its tests are in `src/lib/policyEngine.test.js`.
 
+This is the **browser** policy engine. For rules enforced on-chain, see the [policy vault](vault.md).
+
 ## The shape
 
 ```js
@@ -24,7 +26,7 @@ Returns:
 
 ## Where it is used
 
-Every way of creating a payment goes through the engine:
+Every way of creating a payment in the app goes through the engine:
 
 | Entry point | What happens |
 | --- | --- |
@@ -32,6 +34,7 @@ Every way of creating a payment goes through the engine:
 | Automation page (Run now) | The workflow's payment template is evaluated like any other payment. |
 | Dashboard wallet panel | Evaluated before anything is sent to the wallet. A blocked transfer is never signed. An "approval" result shows a warning in the confirm box. After sending, the transfer is added to the payment history as Completed (confirmed on-chain), Pending (submitted, not yet confirmed) or Failed (reverted). |
 | Developers page | A sandbox that evaluates a hypothetical payment. Nothing is created. |
+| Vault panel | Not used. The vault contract applies its own rules on-chain. |
 
 Wallet transfers are recorded in the payment history, so they count toward the daily limit.
 
@@ -51,9 +54,9 @@ Blocked beats approval. Approval beats allowed.
 
 | ID | Name | Behavior |
 | --- | --- | --- |
-| 1 | Daily spending limit | Sum of Completed and Pending payments in the last 24 hours, plus the proposed amount. Over $5,000 → blocked. |
-| 2 | Large payment approval | Amount over $1,000 → approval. |
-| 3 | New recipient review | Recipient has no prior Completed payment → approval. Disabled by default. |
+| 1 | Daily spending limit | Sum of Completed and Pending payments in the last 24 hours, plus the proposed amount. Over $5,000: blocked. |
+| 2 | Large payment approval | Amount over $1,000: approval. |
+| 3 | New recipient review | Recipient has no prior Completed payment: approval. Disabled by default. |
 
 Policy definitions live in `src/data/demoData.js`.
 
@@ -120,4 +123,8 @@ That's the whole extension pattern. Policies are just functions that return one 
 
 ## Security boundary
 
-These checks run in the browser. They are convenience controls, not a security boundary. A user who can bypass the app can bypass them. Production deployments must enforce critical rules at a trusted execution layer: smart-account permissions, on-chain contracts, or token-level policies.
+These checks run in the browser. They are convenience controls, not a security boundary. A user who can bypass the app can bypass them.
+
+For rules that must hold, use the on-chain [policy vault](vault.md). It enforces a daily limit and an approval threshold inside a smart contract, so money held in the vault cannot leave except through a payment that passes them, whatever app or script sends the transaction. The vault is a separate system: payments made through it are not evaluated by this engine and do not appear in this app's payment history.
+
+The vault is a testnet demo and has not been audited. Its owner can change the rules instantly, so it does not protect against a stolen owner key. Production deployments should add a delay on loosening changes, separate owner and approver wallets, and an audit.

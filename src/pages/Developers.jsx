@@ -15,7 +15,7 @@ const decision = evaluatePayment(
   policies    // enabled policy set
 );
 
-// → {
+// -> {
 //     result: "approval",
 //     reason: "Amount $1500.00 exceeds the $1000.00 approval threshold.",
 //     evaluated: [
@@ -40,9 +40,9 @@ const raw = await publicClient.readContract({
 // Always read decimals from the contract. Never hardcode them.
 const decimals = await getTokenDecimals(token);
 
-// → raw: 12500000n (bigint, raw units)
-// → decimals: 6 for pathUSD
-// formatTokenAmount(raw, decimals) → "12.5"`,
+// -> raw: 12500000n (bigint, raw units)
+// -> decimals: 6 for pathUSD
+// formatTokenAmount(raw, decimals) -> "12.5"`,
 
   create: `const result = addPayment({
   recipient: "Acme Technologies",
@@ -53,7 +53,7 @@ const decimals = await getTokenDecimals(token);
 });
 
 // On success:
-// → {
+// -> {
 //     ok: true,
 //     payment: {
 //       id: "PAY-472306",
@@ -66,7 +66,7 @@ const decimals = await getTokenDecimals(token);
 //   }
 //
 // On block:
-// → {
+// -> {
 //     ok: false,
 //     decision: { result: "blocked", reason: "Daily limit exceeded...", ... }
 //   }`,
@@ -109,7 +109,7 @@ export default function Developers({ policies = [], payments = [] }) {
           <h3>Build with payment instructions</h3>
           <p>
             Payment OS exposes three core primitives: policy evaluation,
-            TIP-20 reads, and payment creation. Each is a plain function —
+            TIP-20 reads, and payment creation. Each is a plain function -
             no SDK, no server, no API key.
           </p>
 
@@ -119,7 +119,8 @@ export default function Developers({ policies = [], payments = [] }) {
           </div>
           <div className="developer-feature">
             <Check size={15} />
-            Tempo testnet reads and wallet-signed transfers via viem
+            Tempo testnet reads, wallet-signed transfers and an on-chain
+            policy vault via viem
           </div>
           <div className="developer-feature">
             <Check size={15} />
@@ -216,7 +217,7 @@ export default function Developers({ policies = [], payments = [] }) {
         <div className="roadmap-row">
           <span className="roadmap-number">02</span>
           <div>
-            <strong>Tempo testnet — read</strong>
+            <strong>Tempo testnet - read</strong>
             <p>Live chain ID, block number, latency, and TIP-20 balance reads against Moderato.</p>
           </div>
           <span className="roadmap-state done">Current</span>
@@ -225,7 +226,7 @@ export default function Developers({ policies = [], payments = [] }) {
         <div className="roadmap-row">
           <span className="roadmap-number">03</span>
           <div>
-            <strong>Tempo testnet — write</strong>
+            <strong>Tempo testnet - write</strong>
             <p>Wallet connect, policy-checked TIP-20 transfers with optional memos, signed in your wallet, with on-chain receipt verification.</p>
           </div>
           <span className="roadmap-state done">Current</span>
@@ -233,6 +234,15 @@ export default function Developers({ policies = [], payments = [] }) {
 
         <div className="roadmap-row">
           <span className="roadmap-number">04</span>
+          <div>
+            <strong>On-chain policy vault</strong>
+            <p>A deployed contract that enforces the daily limit and the approval threshold itself, with approve and reject. Tested on Moderato; not audited.</p>
+          </div>
+          <span className="roadmap-state done">Current</span>
+        </div>
+
+        <div className="roadmap-row">
+          <span className="roadmap-number">05</span>
           <div>
             <strong>Authenticated API</strong>
             <p>Server-side validation, access control, and durable audit events.</p>
